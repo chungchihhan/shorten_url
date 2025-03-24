@@ -64,6 +64,9 @@ def shorten_url():
 
     save_urls(url_mapping)
 
+    base_url = request.host_url.rstrip('/')
+    short_url = f'{base_url}/{short_url}'
+
     return jsonify({
         'short_url': short_url,
         'expiration_date': expiration_date,
@@ -95,6 +98,7 @@ def generate_short_url():
     while short_url in url_mapping:
         short_url = ''.join(random.choices(characters, k=6))
     return short_url
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=8000)
