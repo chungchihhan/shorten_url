@@ -52,7 +52,7 @@ def shorten_url():
     if not is_valid_url(original_url):
         return jsonify({'success': False, 'reason': 'Invalid URL'}), 400
 
-    short_url = generate_short_url(original_url)
+    short_url = generate_short_url()
     expiration_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
 
     url_mapping = load_urls()
