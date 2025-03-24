@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  url-shortener:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - url_data:/data
+    restart: always
+
+volumes:
+  url_data:
+    driver: local

@@ -1,3 +1,4 @@
+import json
 import random
 import re
 import string
@@ -7,7 +8,18 @@ from flask import Flask, jsonify, redirect, request
 
 app = Flask(__name__)
 
-url_mapping = {}
+JSON_FILE_PATH = '/data/urls.json'
+
+def load_urls():
+    try:
+        with open(JSON_FILE_PATH, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_urls(url_mapping):
+    with open(JSON_FILE_PATH, 'w') as f:
+        json.dump(url_mapping, f, indent=4)
 
 def is_valid_url(url):
     regex = re.compile(
@@ -19,6 +31,10 @@ def is_valid_url(url):
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return re.match(regex, url) is not None
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({'message': 'Welcome to URL Shortener Service!'})
 
 # API 1: Create Short URL
 @app.route('/shorten', methods=['POST'])
@@ -39,21 +55,27 @@ def shorten_url():
     short_url = generate_short_url(original_url)
     expiration_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
 
+    url_mapping = load_urls()
+
     url_mapping[short_url] = {
         'original_url': original_url,
         'expiration_date': expiration_date
     }
 
+    save_urls(url_mapping)
+
     return jsonify({
         'short_url': short_url,
         'expiration_date': expiration_date,
         'success': True,
-        'reason': ''
+        'reason': 'The URL has been shortened successfully'
     })
 
 # API 2: Redirect Using Short URL
 @app.route('/<short_url>', methods=['GET'])
 def redirect_url(short_url):
+    url_mapping = load_urls()
+
     if short_url not in url_mapping:
         return jsonify({'success': False, 'reason': 'Short URL not found'}), 404
 
@@ -65,7 +87,9 @@ def redirect_url(short_url):
 
     return redirect(original_url)
 
-def generate_short_url(original_url):
+def generate_short_url():
+    url_mapping = load_urls()
+
     characters = string.ascii_letters + string.digits
     short_url = ''.join(random.choices(characters, k=6)) # 6 characters random string
     while short_url in url_mapping:
